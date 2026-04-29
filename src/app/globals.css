@@ -1,0 +1,45 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-display: 'Noto Serif', serif;
+  --font-body: 'Noto Sans', sans-serif;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #150e06; }
+::-webkit-scrollbar-thumb { background: #402c18; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #573d24; }
+
+/* Chapter images */
+.chapter-page img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+}
+
+/* Progress bar animation */
+@keyframes progress-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+.progress-animate {
+  animation: progress-pulse 1.5s ease-in-out infinite;
+}
+
+/* Manga card hover */
+.manga-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.manga-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(0,0,0,0.5);
+}
