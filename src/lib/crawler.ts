@@ -719,26 +719,32 @@ async function scrapeMangaInfo(page: Page, url: string, signal?: AbortSignal) {
 
         const u = new URL(href);
         const p = u.pathname.toLowerCase();
+        const currentStory = storySlug.toLowerCase();
+
+        // Only keep chapters under the exact current manga route:
+        // /truyen/sextoy-ket-noi-khong-day/chapter-1
+        // This prevents "Đề cử" / recommended manga chapter links from being saved.
+        const sameMangaPrefix = `/truyen/${currentStory}/`;
+        if (!currentStory || !p.startsWith(sameMangaPrefix)) return false;
+
+        const rest = p.slice(sameMangaPrefix.length);
 
         const looksLikeChapter =
-          /(?:chuong|chapter)[-_]?\d+/i.test(p) ||
-          /\/c\d+(?:[/.?#-]|$)/i.test(p) ||
-          /\/chap(?:ter)?[-_]?\d+/i.test(p);
+          /^(?:chuong|chapter)[-_]?\d+(?:[.-]\d+)?\/?$/i.test(rest) ||
+          /^c\d+(?:[.-]\d+)?\/?$/i.test(rest) ||
+          /^chap(?:ter)?[-_]?\d+(?:[.-]\d+)?\/?$/i.test(rest);
 
-        // Avoid collecting random manga/detail/category/search links.
         if (!looksLikeChapter) return false;
+
         if (
           p.includes("/the-loai") ||
           p.includes("/genre") ||
           p.includes("/tim-kiem")
-        )
+        ) {
           return false;
+        }
 
-        // Prefer same story slug when URL includes it, but do not require it because some
-        // sites use compact chapter routes.
-        return (
-          !storySlug || p.includes(storySlug.toLowerCase()) || looksLikeChapter
-        );
+        return true;
       });
 
     const uniqueChapterLinks = Array.from(new Set(chapterLinks));
@@ -811,20 +817,47 @@ async function scrapeChapterImages(
       "#nt_chap_detail",
       ".reading-detail",
       ".chapter-content",
-      '[class*="chapter"]',
+      ".chapter-detail",
+      ".chapter-images",
+      ".reader-area",
+      ".reading-content",
+      "article",
       "main",
     ];
 
     let container: Element | null = null;
     for (const sel of containerSelectors) {
       const el = document.querySelector(sel);
-      if (el) {
+      if (el && el.querySelector("img")) {
         container = el;
         break;
       }
     }
 
-    const root = (container ?? document) as ParentNode;
+    if (!container) {
+      return [];
+    }
+
+    const clone = container.cloneNode(true) as Element;
+
+    clone
+      .querySelectorAll(
+        [
+          "[class*='recommend']",
+          "[class*='related']",
+          "[class*='de-cu']",
+          "[class*='suggest']",
+          "[id*='recommend']",
+          "[id*='related']",
+          "header",
+          "footer",
+          "nav",
+          "aside",
+        ].join(","),
+      )
+      .forEach((el) => el.remove());
+
+    const root = clone as ParentNode;
 
     const items = (
       Array.from(root.querySelectorAll("img")) as HTMLImageElement[]
@@ -924,6 +957,8 @@ export async function crawlManga(
     await saveCookies(context);
 
     const slug = makeSlug(info.title) || mangaUrl.split("/").pop() || "unknown";
+
+    console.log("[scrape] chapterUrls:", info.chapterLinks);
 
     emit({
       stage: "manga-info",
