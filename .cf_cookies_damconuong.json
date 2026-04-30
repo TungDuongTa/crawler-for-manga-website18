@@ -1,0 +1,52 @@
+[
+  {
+    "name": "cf_clearance",
+    "value": "gIb.MPUXwpQDv56JeJxkNZ9R3Mfon2GKtnABIopoup4-1777521432-1.2.1.1-QW9t44qC1H_GH3tiyrrcPHeL2NwR3CIjazCV13gkAonD5hvUxoSEdbrTmjyTwh0c.UCkN0HCpfTqDaG7CV0C8v7nH6LQdwsMkJ.QIOaikdvuwFfJiMgxsFdZFxj0Qb579qhs5SAAWqCToZV0jq21UTZTcyc.fTilsSKNI_01grnh2Bk7orCkT4_hVf0TXcvIe4WmaDeg5jnX7af_BlYyvaYcNL5txyu_yHB.GGIYD4jT3HMJ2.x4zF539u9agpQ_OGr_53VkKUJYCpSzGgZdaYSoqiWuMDyqBSvDDDCVhfowMLgWdmjR91zHKznPIggBuzB3Q8IXfLDGn7alPzMieKu2Z9vt0bvNekBNQlaENy.RUNvLjjv8TlQZIdjr0ZxtHqU9lqgyku07M8T7MsusWryAuk2dncOCsPDC4dBl3UI",
+    "domain": ".damconuong.lol",
+    "path": "/",
+    "expires": -1,
+    "httpOnly": true,
+    "secure": true,
+    "sameSite": "None"
+  },
+  {
+    "name": "_ga",
+    "value": "GA1.1.1879075145.1777521432",
+    "domain": ".damconuong.lol",
+    "path": "/",
+    "expires": 1812081610.479444,
+    "httpOnly": false,
+    "secure": false,
+    "sameSite": "Lax"
+  },
+  {
+    "name": "XSRF-TOKEN",
+    "value": "eyJpdiI6IitoRXRYS2pTdmdkYllwQnY3emc5dXc9PSIsInZhbHVlIjoiMTRhREF5bzBpa0dKZGhiR1ArSnI5SEFBQkdkem5zNHlHT2VERzc4dmlDcTlxbnVFUFFuYlVnS1A5ZGcrR3Z4Z1NEcDcxTnl6Z3pUamtTYkxjWmtaVDF2Y3UvcjMxbWVRLzVMOGt1YWZJRk9CUTNZUGdPeE9RYkM0YzBEQ0R6dkkiLCJtYWMiOiJiY2ZlYmZkZjg4YTkzNmJlYzZmMWUyOTRhODJiMTYzYzViNWRiNmY3MzQxZjk1NzQ1Njg2ZTZkY2IxZmNhMzc5IiwidGFnIjoiIn0%3D",
+    "domain": "damconuong.lol",
+    "path": "/",
+    "expires": 1777608015.58455,
+    "httpOnly": false,
+    "secure": false,
+    "sameSite": "Lax"
+  },
+  {
+    "name": "dam_co_nuong_session",
+    "value": "eyJpdiI6IlVRWG12RTBHSTNBcTZMZEovS0VxVUE9PSIsInZhbHVlIjoiVXB0dEt1dlhGT1NRTVgzRzBTY2hCOU5BL0NyWitwc2V0RVNZL2hkYnFzNkwyL3NmOHJvUnoyYktXYXc4YlMvVWZwSXNzZEFuZ2s1S3RKOUhmNjJWV2wyMkMyVGFBNDEvakMvL3ZZbTFrcUlLUHVsZXZPL0xGUGIvSWx6S0VMeGoiLCJtYWMiOiIwMzBjYzYxZThjMDA3OGRlMDExMDViN2FlN2IzMjNmYzNjMmVlM2Q3YmNlMmZkMmE3MTBkMDUzZTIwYTdlYjBmIiwidGFnIjoiIn0%3D",
+    "domain": "damconuong.lol",
+    "path": "/",
+    "expires": 1777608015.584806,
+    "httpOnly": true,
+    "secure": false,
+    "sameSite": "Lax"
+  },
+  {
+    "name": "_ga_RZ5F7JNX7S",
+    "value": "GS2.1.s1777521432$o1$g1$t1777521647$j23$l0$h0",
+    "domain": ".damconuong.lol",
+    "path": "/",
+    "expires": 1812081647.244857,
+    "httpOnly": false,
+    "secure": false,
+    "sameSite": "Lax"
+  }
+]
