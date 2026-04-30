@@ -1,5 +1,5 @@
-import mongoose, { Schema, Document, Model } from 'mongoose';
-import type { CrawlProgress } from '@/lib/crawler';
+import mongoose, { Schema, Document, Model } from "mongoose";
+import type { CrawlProgress } from "@/lib/crawler";
 
 // ─── Chapter Page ───────────────────────────────────────────────────────────
 
@@ -20,7 +20,7 @@ export interface IChapter extends Document {
   pages: IPage[];
   pageCount: number;
   crawledAt: Date;
-  status: 'pending' | 'crawling' | 'done' | 'error';
+  status: "pending" | "crawling" | "done" | "error";
   error?: string;
 }
 
@@ -28,25 +28,34 @@ const PageSchema = new Schema<IPage>(
   {
     index: { type: Number, required: true },
     originalUrl: { type: String, required: true },
-    cloudinaryUrl: { type: String, default: '' },
+    cloudinaryUrl: { type: String, default: "" },
   },
-  { _id: false }
+  { _id: false },
 );
 
 const ChapterSchema = new Schema<IChapter>(
   {
-    mangaId: { type: Schema.Types.ObjectId, ref: 'Manga', required: true, index: true },
+    mangaId: {
+      type: Schema.Types.ObjectId,
+      ref: "Manga",
+      required: true,
+      index: true,
+    },
     mangaSlug: { type: String, required: true, index: true },
     chapterNumber: { type: Number, required: true },
-    title: { type: String, default: '' },
+    title: { type: String, default: "" },
     sourceUrl: { type: String, required: true },
     pages: [PageSchema],
     pageCount: { type: Number, default: 0 },
     crawledAt: { type: Date, default: Date.now },
-    status: { type: String, enum: ['pending', 'crawling', 'done', 'error'], default: 'pending' },
+    status: {
+      type: String,
+      enum: ["pending", "crawling", "done", "error"],
+      default: "pending",
+    },
     error: { type: String },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 ChapterSchema.index({ mangaId: 1, chapterNumber: 1 }, { unique: true });
@@ -63,11 +72,10 @@ export interface IManga extends Document {
   description: string;
   tags: string[];
   author: string;
-  artist: string;
   status: string;
   totalChapters: number;
   chapterUrls: string[];
-  crawlStatus: 'idle' | 'crawling' | 'done' | 'error';
+  crawlStatus: "idle" | "crawling" | "done" | "error";
   crawlError?: string;
   lastCrawledAt: Date;
   createdAt: Date;
@@ -80,33 +88,35 @@ const MangaSchema = new Schema<IManga>(
     title: { type: String, required: true },
     alternativeTitles: [{ type: String }],
     sourceUrl: { type: String, required: true },
-    coverUrl: { type: String, default: '' },
-    coverCloudinaryUrl: { type: String, default: '' },
-    description: { type: String, default: '' },
+    coverUrl: { type: String, default: "" },
+    coverCloudinaryUrl: { type: String, default: "" },
+    description: { type: String, default: "" },
     tags: [{ type: String }],
-    author: { type: String, default: '' },
-    artist: { type: String, default: '' },
-    status: { type: String, default: 'Unknown' },
+    author: { type: String, default: "" },
+
+    status: { type: String, default: "Unknown" },
     totalChapters: { type: Number, default: 0 },
     chapterUrls: [{ type: String }],
     crawlStatus: {
       type: String,
-      enum: ['idle', 'crawling', 'done', 'error'],
-      default: 'idle',
+      enum: ["idle", "crawling", "done", "error"],
+      default: "idle",
     },
     crawlError: { type: String },
     lastCrawledAt: { type: Date, default: Date.now },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 // ─── Exports ─────────────────────────────────────────────────────────────────
 
 export const Manga: Model<IManga> =
-  mongoose.models.Manga || mongoose.model<IManga>('Manga', MangaSchema);
+  mongoose.models.Manga ||
+  mongoose.model<IManga>("Manga", MangaSchema, "mangas18");
 
 export const Chapter: Model<IChapter> =
-  mongoose.models.Chapter || mongoose.model<IChapter>('Chapter', ChapterSchema);
+  mongoose.models.Chapter ||
+  mongoose.model<IChapter>("Chapter", ChapterSchema, "chapters18");
 
 // ─── Crawl Job ────────────────────────────────────────────────────────────────
 
@@ -114,7 +124,7 @@ export interface ICrawlJob extends Document {
   id: string;
   urls: string[];
   startedAt: Date;
-  status: 'running' | 'done' | 'error' | 'cancelled';
+  status: "running" | "done" | "error" | "cancelled";
   progress: Record<string, CrawlProgress>;
   logs: string[];
   createdAt: Date;
@@ -128,8 +138,8 @@ const CrawlJobSchema = new Schema<ICrawlJob>(
     startedAt: { type: Date, default: Date.now },
     status: {
       type: String,
-      enum: ['running', 'done', 'error', 'cancelled'],
-      default: 'running',
+      enum: ["running", "done", "error", "cancelled"],
+      default: "running",
       index: true,
     },
     // Use a map-like object keyed by mangaUrl -> CrawlProgress
@@ -140,7 +150,8 @@ const CrawlJobSchema = new Schema<ICrawlJob>(
 );
 
 export const CrawlJob: Model<ICrawlJob> =
-  mongoose.models.CrawlJob || mongoose.model<ICrawlJob>('CrawlJob', CrawlJobSchema);
+  mongoose.models.CrawlJob ||
+  mongoose.model<ICrawlJob>("CrawlJob", CrawlJobSchema, "crawljobs18");
 
 // ─── Admin Settings ───────────────────────────────────────────────────────────
 
@@ -154,11 +165,15 @@ export interface IAdminSettings extends Document {
 const AdminSettingsSchema = new Schema<IAdminSettings>(
   {
     key: { type: String, required: true, unique: true, index: true },
-    urlsText: { type: String, default: '' },
+    urlsText: { type: String, default: "" },
   },
   { timestamps: true },
 );
 
 export const AdminSettings: Model<IAdminSettings> =
   mongoose.models.AdminSettings ||
-  mongoose.model<IAdminSettings>('AdminSettings', AdminSettingsSchema);
+  mongoose.model<IAdminSettings>(
+    "AdminSettings",
+    AdminSettingsSchema,
+    "adminsettings18",
+  );

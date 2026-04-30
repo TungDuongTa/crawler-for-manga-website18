@@ -1,7 +1,7 @@
-'use client';
-import { useState, useEffect } from 'react';
-import Image from 'next/image';
-import Link from 'next/link';
+"use client";
+import { useState, useEffect } from "react";
+import Image from "next/image";
+import Link from "next/link";
 
 interface Chapter {
   chapterNumber: number;
@@ -19,22 +19,31 @@ interface MangaDetail {
   description: string;
   tags: string[];
   author: string;
-  artist: string;
   status: string;
   totalChapters: number;
   crawlStatus: string;
   sourceUrl: string;
 }
 
-export default function MangaDetailPage({ params }: { params: { slug: string } }) {
-  const [data, setData] = useState<{ manga: MangaDetail; chapters: Chapter[] } | null>(null);
+export default function MangaDetailPage({
+  params,
+}: {
+  params: { slug: string };
+}) {
+  const [data, setData] = useState<{
+    manga: MangaDetail;
+    chapters: Chapter[];
+  } | null>(null);
   const [loading, setLoading] = useState(true);
   const [sortAsc, setSortAsc] = useState(false);
 
   useEffect(() => {
     fetch(`/api/manga/${params.slug}`)
       .then((r) => r.json())
-      .then((d) => { setData(d); setLoading(false); })
+      .then((d) => {
+        setData(d);
+        setLoading(false);
+      })
       .catch(() => setLoading(false));
   }, [params.slug]);
 
@@ -61,14 +70,21 @@ export default function MangaDetailPage({ params }: { params: { slug: string } }
       <div className="max-w-5xl mx-auto px-4 py-16 text-center">
         <p className="text-4xl mb-4">😶</p>
         <p className="text-ink-400">Manga not found.</p>
-        <Link href="/" className="text-accent hover:underline mt-2 inline-block text-sm">← Back to library</Link>
+        <Link
+          href="/"
+          className="text-accent hover:underline mt-2 inline-block text-sm"
+        >
+          ← Back to library
+        </Link>
       </div>
     );
   }
 
   const { manga, chapters } = data;
   const sorted = [...chapters].sort((a, b) =>
-    sortAsc ? a.chapterNumber - b.chapterNumber : b.chapterNumber - a.chapterNumber
+    sortAsc
+      ? a.chapterNumber - b.chapterNumber
+      : b.chapterNumber - a.chapterNumber,
   );
   const cover = manga.coverCloudinaryUrl || manga.coverUrl;
 
@@ -76,7 +92,10 @@ export default function MangaDetailPage({ params }: { params: { slug: string } }
     <div className="max-w-5xl mx-auto px-4 py-8">
       {/* Breadcrumb */}
       <div className="mb-6">
-        <Link href="/" className="text-ink-400 hover:text-paper-100 text-sm transition-colors">
+        <Link
+          href="/"
+          className="text-ink-400 hover:text-paper-100 text-sm transition-colors"
+        >
           ← Library
         </Link>
       </div>
@@ -96,7 +115,9 @@ export default function MangaDetailPage({ params }: { params: { slug: string } }
                 priority
               />
             ) : (
-              <div className="absolute inset-0 flex items-center justify-center text-ink-500 text-5xl">📖</div>
+              <div className="absolute inset-0 flex items-center justify-center text-ink-500 text-5xl">
+                📖
+              </div>
             )}
           </div>
         </div>
@@ -108,7 +129,7 @@ export default function MangaDetailPage({ params }: { params: { slug: string } }
           </h1>
           {manga.alternativeTitles?.length > 0 && (
             <p className="text-ink-400 text-sm mb-3 italic">
-              {manga.alternativeTitles.join(' • ')}
+              {manga.alternativeTitles.join(" • ")}
             </p>
           )}
 
@@ -130,25 +151,28 @@ export default function MangaDetailPage({ params }: { params: { slug: string } }
           <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm mb-4">
             {manga.author && (
               <div>
-                <span className="text-ink-500 text-xs uppercase tracking-wide block">Author</span>
+                <span className="text-ink-500 text-xs uppercase tracking-wide block">
+                  Author
+                </span>
                 <span className="text-paper-200">{manga.author}</span>
               </div>
             )}
-            {manga.artist && manga.artist !== manga.author && (
-              <div>
-                <span className="text-ink-500 text-xs uppercase tracking-wide block">Artist</span>
-                <span className="text-paper-200">{manga.artist}</span>
-              </div>
-            )}
+
             {manga.status && (
               <div>
-                <span className="text-ink-500 text-xs uppercase tracking-wide block">Status</span>
+                <span className="text-ink-500 text-xs uppercase tracking-wide block">
+                  Status
+                </span>
                 <span className="text-paper-200">{manga.status}</span>
               </div>
             )}
             <div>
-              <span className="text-ink-500 text-xs uppercase tracking-wide block">Chapters</span>
-              <span className="text-paper-200">{chapters.length} / {manga.totalChapters}</span>
+              <span className="text-ink-500 text-xs uppercase tracking-wide block">
+                Chapters
+              </span>
+              <span className="text-paper-200">
+                {chapters.length} / {manga.totalChapters}
+              </span>
             </div>
           </div>
 
@@ -186,21 +210,25 @@ export default function MangaDetailPage({ params }: { params: { slug: string } }
         <div className="flex items-center justify-between mb-4">
           <h2 className="font-display text-lg font-bold text-paper-100">
             Chapters
-            <span className="text-ink-400 font-normal text-base ml-2">({chapters.length})</span>
+            <span className="text-ink-400 font-normal text-base ml-2">
+              ({chapters.length})
+            </span>
           </h2>
           <button
             onClick={() => setSortAsc((v) => !v)}
             className="text-xs text-ink-400 hover:text-paper-100 bg-ink-800 px-3 py-1.5 rounded-lg border border-ink-700 transition-colors"
           >
-            {sortAsc ? '↑ Oldest first' : '↓ Newest first'}
+            {sortAsc ? "↑ Oldest first" : "↓ Newest first"}
           </button>
         </div>
 
         {chapters.length === 0 ? (
           <div className="text-center py-12 text-ink-500">
             <p>No chapters crawled yet.</p>
-            {manga.crawlStatus === 'crawling' && (
-              <p className="text-yellow-500 text-sm mt-2 animate-pulse">⏳ Crawl in progress…</p>
+            {manga.crawlStatus === "crawling" && (
+              <p className="text-yellow-500 text-sm mt-2 animate-pulse">
+                ⏳ Crawl in progress…
+              </p>
             )}
           </div>
         ) : (
@@ -222,7 +250,9 @@ export default function MangaDetailPage({ params }: { params: { slug: string } }
                   )}
                 </div>
                 <div className="text-right flex-shrink-0 ml-4">
-                  <span className="text-xs text-ink-500">{ch.pageCount} pages</span>
+                  <span className="text-xs text-ink-500">
+                    {ch.pageCount} pages
+                  </span>
                   <span className="text-ink-600 text-xs ml-2">→</span>
                 </div>
               </Link>

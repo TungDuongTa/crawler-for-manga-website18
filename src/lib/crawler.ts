@@ -642,10 +642,9 @@ async function scrapeMangaInfo(page: Page, url: string, signal?: AbortSignal) {
     const coverImg = getAttr(".cover-frame img", "src");
 
     const description =
+      getText("div.prose.dark\\:prose-invert") ||
+      getText("div[class*='prose']") ||
       getText(".detail-content p") ||
-      getText("#story_detail .detail-content") ||
-      getText(".story-detail .detail-content") ||
-      getText(".description") ||
       "";
 
     const altTitle =
@@ -673,8 +672,6 @@ async function scrapeMangaInfo(page: Page, url: string, signal?: AbortSignal) {
       getText('[class*="author"] a') ||
       getText(".info-detail li:nth-child(2) a") ||
       "";
-
-    const artist = "";
 
     const status =
       findField(["Tình trạng", "Tình trạng:", "Status"]) ||
@@ -772,7 +769,7 @@ async function scrapeMangaInfo(page: Page, url: string, signal?: AbortSignal) {
       description,
       tags: Array.from(new Set(tags)),
       author,
-      artist,
+
       status,
       lastUpdated,
       altTitles: altTitle ? [altTitle] : [],
@@ -1002,7 +999,7 @@ export async function crawlManga(
           description: info.description,
           tags: info.tags,
           author: info.author,
-          artist: info.artist,
+
           status: info.status,
           lastUpdated: info.lastUpdated,
           totalChapters: info.chapterLinks.length,
