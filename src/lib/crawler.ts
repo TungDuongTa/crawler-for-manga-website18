@@ -52,6 +52,25 @@ const HEADLESS = process.env.CRAWLER_HEADLESS === "true";
 const USE_PERSISTENT_PROFILE =
   process.env.CRAWLER_USE_PERSISTENT_PROFILE !== "false";
 
+// ─── Speed / throttling config ────────────────────────────────────────────────
+const IMAGE_CONCURRENCY = Math.max(
+  1,
+  Number(process.env.CRAWLER_IMAGE_CONCURRENCY ?? 4),
+);
+const IMAGE_DELAY_MS = Math.max(
+  0,
+  Number(process.env.CRAWLER_IMAGE_DELAY_MS ?? 0),
+);
+const CHAPTER_DELAY_MIN_MS = Math.max(
+  0,
+  Number(process.env.CRAWLER_CHAPTER_DELAY_MIN_MS ?? 500),
+);
+const CHAPTER_DELAY_MAX_MS = Math.max(
+  CHAPTER_DELAY_MIN_MS,
+  Number(process.env.CRAWLER_CHAPTER_DELAY_MAX_MS ?? 1200),
+);
+const DO_HUMAN_BEHAVIOR = process.env.CRAWLER_HUMAN_BEHAVIOR === "true";
+
 const PROFILE_DIR = path.join(process.cwd(), ".browser-profile-damconuong");
 const COOKIE_FILE = path.join(process.cwd(), ".cf_cookies_damconuong.json");
 const UA_FILE = path.join(process.cwd(), ".cf_user_agent_damconuong.txt");
@@ -272,6 +291,29 @@ async function withRetry<T>(
   throw lastErr instanceof Error ? lastErr : new Error(String(lastErr));
 }
 
+async function mapLimit<T, R>(
+  items: T[],
+  limit: number,
+  mapper: (item: T, index: number) => Promise<R>,
+): Promise<R[]> {
+  const results = new Array<R>(items.length);
+  let nextIndex = 0;
+
+  async function worker() {
+    while (nextIndex < items.length) {
+      const currentIndex = nextIndex++;
+      results[currentIndex] = await mapper(items[currentIndex], currentIndex);
+    }
+  }
+
+  const workers = Array.from({ length: Math.min(limit, items.length) }, () =>
+    worker(),
+  );
+
+  await Promise.all(workers);
+  return results;
+}
+
 async function isCloudflareBlocked(page: Page): Promise<boolean> {
   const title = await page.title().catch(() => "");
   const html = await page.content().catch(() => "");
@@ -354,7 +396,11 @@ async function navigateSafe(
   console.log("[nav] final url:", page.url());
 
   await waitForRealPage(page, url, signal);
-  await humanBehaviour(page, signal);
+
+  if (DO_HUMAN_BEHAVIOR) {
+    await humanBehaviour(page, signal);
+  }
+
   await assertNotCloudflareBlocked(page, url);
 }
 
@@ -474,6 +520,15 @@ async function createCrawlerContext(
   console.log("[browser] headless:", HEADLESS);
   console.log("[browser] persistent profile:", USE_PERSISTENT_PROFILE);
   console.log("[browser] ua:", userAgent || "(Playwright default)");
+  console.log("[speed] image concurrency:", IMAGE_CONCURRENCY);
+  console.log("[speed] image delay ms:", IMAGE_DELAY_MS);
+  console.log(
+    "[speed] chapter delay ms:",
+    CHAPTER_DELAY_MIN_MS,
+    "-",
+    CHAPTER_DELAY_MAX_MS,
+  );
+  console.log("[speed] human behaviour:", DO_HUMAN_BEHAVIOR);
 
   return ctx;
 }
@@ -750,10 +805,10 @@ async function scrapeMangaInfo(page: Page, url: string, signal?: AbortSignal) {
     uniqueChapterLinks.sort((a, b) => {
       const getNo = (href: string) => {
         const m =
-          href.match(/(?:chuong|chapter)[-_]?(\d+(?:\.\d+)?)/i) ||
-          href.match(/\/c(\d+(?:\.\d+)?)(?:[/.?#-]|$)/i) ||
-          href.match(/\/chap(?:ter)?[-_]?(\d+(?:\.\d+)?)/i);
-        return m ? Number(m[1]) : Number.NaN;
+          href.match(/(?:chuong|chapter)[-_]?(\d+(?:[.-]\d+)?)/i) ||
+          href.match(/\/c(\d+(?:[.-]\d+)?)(?:[/.?#-]|$)/i) ||
+          href.match(/\/chap(?:ter)?[-_]?(\d+(?:[.-]\d+)?)/i);
+        return m ? Number(m[1].replace("-", ".")) : Number.NaN;
       };
 
       const an = getNo(a);
@@ -901,21 +956,30 @@ async function scrapeChapterImages(
 // ─── Parse chapter number ─────────────────────────────────────────────────────
 
 function parseChapterNumber(url: string, title?: string): number {
-  const m =
-    url.match(/chapter[_-]?(\d+(?:\.\d+)?)/i) ||
-    url.match(/chuong[_-]?(\d+(?:\.\d+)?)/i) ||
-    url.match(/[/-]c(\d+(?:\.\d+)?)/i) ||
-    url.match(/[/-](\d+(?:\.\d+)?)(?:[/#?]|$)/i);
+  const parseRaw = (raw: string): number => {
+    // Supports:
+    // chapter-67      -> 67
+    // chapter-67-5    -> 67.5
+    // chapter-67.5    -> 67.5
+    // chuong-67-5     -> 67.5
+    // c67-5           -> 67.5
+    const normalized = raw.replace("-", ".");
+    return parseFloat(normalized);
+  };
 
-  if (m) return parseFloat(m[1]);
+  const m =
+    url.match(/(?:chapter|chuong)[_-]?(\d+(?:[.-]\d+)?)/i) ||
+    url.match(/[/-]c(\d+(?:[.-]\d+)?)(?:[/#?]|$)/i) ||
+    url.match(/[/-](\d+(?:[.-]\d+)?)(?:[/#?]|$)/i);
+
+  if (m) return parseRaw(m[1]);
 
   if (title) {
     const tm =
-      title.match(/chapter\s*(\d+(?:\.\d+)?)/i) ||
-      title.match(/chuong\s*(\d+(?:\.\d+)?)/i) ||
-      title.match(/(\d+(?:\.\d+)?)/);
+      title.match(/(?:chapter|chuong)\s*(\d+(?:[.-]\d+)?)/i) ||
+      title.match(/(\d+(?:[.-]\d+)?)/);
 
-    if (tm) return parseFloat(tm[1]);
+    if (tm) return parseRaw(tm[1]);
   }
 
   return 0;
@@ -1073,49 +1137,67 @@ export async function crawlManga(
           opts.signal,
         );
 
-        const pages: {
-          index: number;
-          originalUrl: string;
-          cloudinaryUrl: string;
-        }[] = [];
+        let completedImages = 0;
 
-        for (let j = 0; j < images.length; j++) {
-          throwIfAborted(opts.signal);
+        const pages = await mapLimit(
+          images,
+          IMAGE_CONCURRENCY,
+          async (rawImgUrl, j) => {
+            throwIfAborted(opts.signal);
 
-          const imgUrl = images[j].trim();
-          const publicId = `${slug}-ch${chapterNum}-p${j + 1}`;
-          let cloudinaryUrl = imgUrl;
+            const imgUrl = rawImgUrl.trim();
+            const chapterLabelForFile = String(chapterNum).replace(".", "-");
+            const publicId = `${slug}-ch${chapterLabelForFile}-p${j + 1}`;
+            let cloudinaryUrl = imgUrl;
 
-          try {
-            const buffer = await fetchImageBuffer(page, imgUrl, 3, opts.signal);
-            cloudinaryUrl = await uploadImageBuffer(
-              buffer,
-              `${slug}/ch${chapterNum}`,
-              publicId,
-            );
-          } catch (e) {
-            console.error(
-              `Image upload failed (ch${chapterNum} p${j + 1}):`,
-              e,
-            );
-          }
+            try {
+              const buffer = await fetchImageBuffer(
+                page,
+                imgUrl,
+                3,
+                opts.signal,
+              );
+              cloudinaryUrl = await uploadImageBuffer(
+                buffer,
+                `${slug}/ch${chapterNum}`,
+                publicId,
+              );
+            } catch (e) {
+              console.error(
+                `Image upload failed (ch${chapterNum} p${j + 1}):`,
+                e,
+              );
+            }
 
-          pages.push({ index: j + 1, originalUrl: imgUrl, cloudinaryUrl });
+            completedImages++;
 
-          if (j % 5 === 0) {
-            emit({
-              stage: "images",
-              message: `Chapter ${chapterNum}: uploading image ${j + 1}/${images.length}`,
-              progress: 15 + Math.round((i / Math.max(total, 1)) * 75),
-              chaptersDone: i,
-              chaptersTotal: total,
-              imagesDone: j + 1,
-              imagesTotal: images.length,
-            });
-          }
+            if (
+              completedImages === 1 ||
+              completedImages % 5 === 0 ||
+              completedImages === images.length
+            ) {
+              emit({
+                stage: "images",
+                message: `Chapter ${chapterNum}: uploaded image ${completedImages}/${images.length}`,
+                progress: 15 + Math.round((i / Math.max(total, 1)) * 75),
+                chaptersDone: i,
+                chaptersTotal: total,
+                imagesDone: completedImages,
+                imagesTotal: images.length,
+              });
+            }
 
-          await delay(jitter(350, 600), opts.signal);
-        }
+            if (IMAGE_DELAY_MS > 0) {
+              await delay(jitter(IMAGE_DELAY_MS, IMAGE_DELAY_MS), opts.signal);
+            }
+
+            return {
+              index: j + 1,
+              originalUrl: imgUrl,
+              cloudinaryUrl,
+            };
+          },
+        );
 
         await Chapter.findByIdAndUpdate(chapter._id, {
           $set: {
@@ -1143,7 +1225,13 @@ export async function crawlManga(
         console.error(`Chapter ${chapterNum} failed:`, err.message);
       }
 
-      await delay(jitter(1800, 2500), opts.signal);
+      await delay(
+        jitter(
+          CHAPTER_DELAY_MIN_MS,
+          CHAPTER_DELAY_MAX_MS - CHAPTER_DELAY_MIN_MS,
+        ),
+        opts.signal,
+      );
     }
 
     // ── 5. Finalise ───────────────────────────────────────────────────────────
