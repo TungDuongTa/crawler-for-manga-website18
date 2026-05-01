@@ -71,12 +71,41 @@ const CHAPTER_DELAY_MAX_MS = Math.max(
 );
 const DO_HUMAN_BEHAVIOR = process.env.CRAWLER_HUMAN_BEHAVIOR === "true";
 
+// ─── Cloudflare recovery config ───────────────────────────────────────────────
+// When Cloudflare appears mid-crawl, refresh cookies through FlareSolverr,
+// inject them into the current context, reload, and retry the same navigation.
+const CF_RECOVERY_ENABLED = process.env.CRAWLER_CF_RECOVERY !== "false";
+const CF_RECOVERY_RETRIES = Math.max(
+  0,
+  Number(process.env.CRAWLER_CF_RECOVERY_RETRIES ?? 2),
+);
+const CF_RECOVERY_COOLDOWN_MS = Math.max(
+  0,
+  Number(process.env.CRAWLER_CF_RECOVERY_COOLDOWN_MS ?? 8000),
+);
+
 const PROFILE_DIR = path.join(process.cwd(), ".browser-profile-damconuong");
 const COOKIE_FILE = path.join(process.cwd(), ".cf_cookies_damconuong.json");
 const UA_FILE = path.join(process.cwd(), ".cf_user_agent_damconuong.txt");
 
 const DEBUG_HTML = path.join(process.cwd(), "cloudflare-blocked.html");
 const DEBUG_PNG = path.join(process.cwd(), "cloudflare-blocked.png");
+
+class CloudflareBlockedError extends Error {
+  constructor(public readonly blockedUrl: string) {
+    super(
+      `Cloudflare challenge/block page detected after navigation: ${blockedUrl}`,
+    );
+    this.name = "CloudflareBlockedError";
+  }
+}
+
+function isCloudflareBlockedError(err: unknown): err is CloudflareBlockedError {
+  return (
+    err instanceof CloudflareBlockedError ||
+    (err as Error)?.name === "CloudflareBlockedError"
+  );
+}
 
 // ─── FlareSolverr ─────────────────────────────────────────────────────────────
 
@@ -338,10 +367,12 @@ async function assertNotCloudflareBlocked(
     await page.screenshot({ path: DEBUG_PNG, fullPage: true });
   } catch {}
 
-  throw new Error(
+  console.warn(
     `Cloudflare challenge/block page detected after navigation: ${url}. ` +
       `Check ${DEBUG_HTML} and ${DEBUG_PNG}.`,
   );
+
+  throw new CloudflareBlockedError(url);
 }
 
 async function waitForRealPage(page: Page, url: string, signal?: AbortSignal) {
@@ -380,28 +411,87 @@ async function humanBehaviour(page: Page, signal?: AbortSignal): Promise<void> {
   await delay(jitter(300, 700), signal);
 }
 
-async function navigateSafe(
+async function recoverCloudflareSession(
   page: Page,
   url: string,
   signal?: AbortSignal,
 ): Promise<void> {
-  console.log("[nav] goto:", url);
+  if (!CF_RECOVERY_ENABLED) {
+    throw new CloudflareBlockedError(url);
+  }
+
+  console.warn(`[cloudflare] Recovering session for ${url}...`);
+
+  if (CF_RECOVERY_COOLDOWN_MS > 0) {
+    await delay(CF_RECOVERY_COOLDOWN_MS, signal);
+  }
+
+  const solution = await solveWithFlare(url, signal);
+
+  saveUserAgent(solution.userAgent);
+
+  await injectFlareCookies(page.context(), solution.cookies);
+  await saveCookies(page.context());
 
   await page.goto(url, {
     waitUntil: "domcontentloaded",
     timeout: 60000,
   });
 
-  console.log("[nav] title:", await page.title().catch(() => ""));
-  console.log("[nav] final url:", page.url());
-
   await waitForRealPage(page, url, signal);
+  await assertNotCloudflareBlocked(page, url);
 
-  if (DO_HUMAN_BEHAVIOR) {
-    await humanBehaviour(page, signal);
+  console.log("[cloudflare] Recovery successful.");
+}
+
+async function navigateSafe(
+  page: Page,
+  url: string,
+  signal?: AbortSignal,
+): Promise<void> {
+  let lastErr: unknown;
+
+  for (let attempt = 0; attempt <= CF_RECOVERY_RETRIES; attempt++) {
+    try {
+      console.log("[nav] goto:", url);
+
+      await page.goto(url, {
+        waitUntil: "domcontentloaded",
+        timeout: 60000,
+      });
+
+      console.log("[nav] title:", await page.title().catch(() => ""));
+      console.log("[nav] final url:", page.url());
+
+      await waitForRealPage(page, url, signal);
+
+      if (DO_HUMAN_BEHAVIOR) {
+        await humanBehaviour(page, signal);
+      }
+
+      await assertNotCloudflareBlocked(page, url);
+      return;
+    } catch (err) {
+      lastErr = err;
+
+      if (!isCloudflareBlockedError(err)) {
+        throw err;
+      }
+
+      if (attempt >= CF_RECOVERY_RETRIES) {
+        throw err;
+      }
+
+      console.warn(
+        `[cloudflare] Blocked on ${url}. Recovery attempt ${attempt + 1}/${CF_RECOVERY_RETRIES}`,
+      );
+
+      await recoverCloudflareSession(page, url, signal);
+      return;
+    }
   }
 
-  await assertNotCloudflareBlocked(page, url);
+  throw lastErr instanceof Error ? lastErr : new Error(String(lastErr));
 }
 
 async function fetchImageBuffer(
@@ -529,6 +619,9 @@ async function createCrawlerContext(
     CHAPTER_DELAY_MAX_MS,
   );
   console.log("[speed] human behaviour:", DO_HUMAN_BEHAVIOR);
+  console.log("[cloudflare] recovery enabled:", CF_RECOVERY_ENABLED);
+  console.log("[cloudflare] recovery retries:", CF_RECOVERY_RETRIES);
+  console.log("[cloudflare] recovery cooldown ms:", CF_RECOVERY_COOLDOWN_MS);
 
   return ctx;
 }
@@ -703,15 +796,7 @@ async function scrapeMangaInfo(page: Page, url: string, signal?: AbortSignal) {
       "";
 
     const altTitle =
-      findField([
-        "Tên khác",
-        "Tên khác:",
-        "Other name",
-        "Alternative",
-        "Alternative name",
-      ]) ||
-      getText(".othername") ||
-      getText('[class*="other"] .col-xs-8');
+      getText(".text-base.md\\:text-lg.font-bold.truncate") || "";
 
     // Tags/Genres
     const tagEls = document.querySelectorAll(
@@ -721,11 +806,17 @@ async function scrapeMangaInfo(page: Page, url: string, signal?: AbortSignal) {
       (el) => el.textContent.trim().toLowerCase(),
     );
 
+    // const author =
+    //   findField(["Tác giả", "Tác giả:", "Author"]) ||
+    //   getText(".author a") ||
+    //   getText('[class*="author"] a') ||
+    //   getText(".info-detail li:nth-child(2) a") ||
+    //   "";
     const author =
-      findField(["Tác giả", "Tác giả:", "Author"]) ||
-      getText(".author a") ||
-      getText('[class*="author"] a') ||
-      getText(".info-detail li:nth-child(2) a") ||
+      // 1. Target the specific teal link class (very precise)
+      getText("a.text-teal-500") ||
+      // 2. Target by the href attribute containing "tac-gia" (very reliable for this site)
+      getText('a[href*="/tac-gia/"]') ||
       "";
 
     const status =
@@ -1218,6 +1309,23 @@ export async function crawlManga(
           chaptersTotal: total,
         });
       } catch (err: any) {
+        if (isCloudflareBlockedError(err)) {
+          console.warn(
+            `Chapter ${chapterNum} hit Cloudflare after recovery retries. ` +
+              `Leaving it as crawling so you can retry/resume later.`,
+          );
+
+          await Chapter.findByIdAndUpdate(chapter._id, {
+            $set: {
+              status: "crawling",
+              error: "Cloudflare blocked; retry later",
+            },
+          });
+
+          // Stop the crawl here instead of marking every remaining chapter as error.
+          throw err;
+        }
+
         await Chapter.findByIdAndUpdate(chapter._id, {
           $set: { status: "error", error: err.message },
         });
@@ -1232,6 +1340,27 @@ export async function crawlManga(
         ),
         opts.signal,
       );
+
+      const cooldownEvery = Number(
+        process.env.CRAWLER_COOLDOWN_EVERY_CHAPTERS ?? 10,
+      );
+      const cooldownMin = Number(process.env.CRAWLER_COOLDOWN_MIN_MS ?? 15000);
+      const cooldownMax = Number(process.env.CRAWLER_COOLDOWN_MAX_MS ?? 45000);
+
+      if (
+        cooldownEvery > 0 &&
+        (i + 1) % cooldownEvery === 0 &&
+        i + 1 < chapterUrls.length
+      ) {
+        const cooldownMs = jitter(
+          cooldownMin,
+          Math.max(0, cooldownMax - cooldownMin),
+        );
+        console.log(
+          `[cooldown] ${Math.round(cooldownMs)}ms after ${i + 1} chapters`,
+        );
+        await delay(cooldownMs, opts.signal);
+      }
     }
 
     // ── 5. Finalise ───────────────────────────────────────────────────────────
