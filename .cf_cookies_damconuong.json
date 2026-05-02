@@ -1,0 +1,74 @@
+[
+  {
+    "name": "cf_chl_rc_ni",
+    "value": "2",
+    "domain": "damconuong.lol",
+    "path": "/",
+    "expires": -1,
+    "httpOnly": false,
+    "secure": true,
+    "sameSite": "None"
+  },
+  {
+    "name": "cf_clearance",
+    "value": "iLnRe.44ORmWWWBWUmBAHeLOhrLK1cFYXZkQnYJwsFI-1777650452-1.2.1.1-DQSNPbRTY3wgfY09pZnsGQBnnupGQoXAtNxe_ynrUjVvW_3x12cgCm9urcVOK0v4H4IfM4ce6QW2mmH6CuaOn38b8kj34Zu2dRoL6spuGMNbhQ.EFQr57F3YuPjFcq_rsW89uC8sUk7VHY5ysjp7a7.z4jgSsKLb1oJQptUoD7CfDcvm4U_20lXLdP3upcL.hh8QPbBOU0W.CyxKcjeW5aNmvyyA3v44v9TTJYJSqrXeDUfaMZSDFwSJ4QNzfSc08z2vJT8z5fd8AMjH.akdjfkxii.PEm08f1MiOUiQvbOAq2iZ96I_393kA80ksPQ16WRsjCG.9aExA5GpDYX34j.SOh2vUz9eg.9dSmjd7TVnZTL83Lv2JnPWaIY4jZTHuJFahhdKJc8cgc_Ih0MNLsRYHDJDwzq6wT5Zz7jUv8g",
+    "domain": ".damconuong.lol",
+    "path": "/",
+    "expires": 1809186451.378507,
+    "httpOnly": true,
+    "secure": true,
+    "sameSite": "None",
+    "partitionKey": "https://damconuong.lol",
+    "_crHasCrossSiteAncestor": false
+  },
+  {
+    "name": "cf_clearance",
+    "value": "0zMXlY5L46dS8zUDM.h2e9SzfAeG7H7FKnT3Zeeieyo-1777650497-1.2.1.1-HFi2iRWqkpqAII8NvLYKpfdLRx0rqlAFx_FGIDBrzIpakfgIhyEY1mJkFhc8j1Utys.fArKN6rfhqGgkUj9ytUOrbrnpa72TR53z2yfh5mMS5Men5Snx2_Xm114ua3enqJzIupQ6pAGwI0ldvoAHykjCJB7P2zutSvkXanW3cmztndva2BeFUBmF.5OA3EtOSKEEW.U6xHNsRyzfVzXSEJCKVVdIX_5SDXMFRqbOhYvt5ZBM9F9wTJB0woBPFcZKpE4DFwcQvBevO8EFA.x2ej6dufLzhtMnQNnr39EEw0PHPpsh8UyOwwGObRpb5heaVq6xTkHiYGTOzbrXen0eFLcgKzMki5Ge0ejf1Gp..zwYcmn1xBzWWf9W0FQwnUWM.tb.xnnZ.Ui_xxoLExE3AVZJQyQUqy6y53GAEPtGGuM",
+    "domain": ".damconuong.lol",
+    "path": "/",
+    "expires": -1,
+    "httpOnly": true,
+    "secure": true,
+    "sameSite": "None"
+  },
+  {
+    "name": "_ga",
+    "value": "GA1.1.1981382926.1777650496",
+    "domain": ".damconuong.lol",
+    "path": "/",
+    "expires": 1812210549.278228,
+    "httpOnly": false,
+    "secure": false,
+    "sameSite": "Lax"
+  },
+  {
+    "name": "XSRF-TOKEN",
+    "value": "eyJpdiI6IjRFM0pPSWZCbFUyQlNZRmhGWUZYd3c9PSIsInZhbHVlIjoiemNlaGptZDBqY2NQYUFGdm5jQUxKVEl2SG9HQ0VBN2ZycGZXWWFrZ1ZSUWs0MHNaUkJ5anV3eC9wS3lwUWFjanNCSUZ3OW5BQUV5a3djZjQzajYrKzFHbHNOK3VJY29HMUNXUm9CZ0FVZXI0TmJjbSsxL3hLMW4zeC9OSHRsVzAiLCJtYWMiOiI2YWEwMGFhMjI5ODk5Yzg0MDM1NjJlYWVjNTYwY2UzMmQ5YWIyMzI2YjFjNDFlOThiYWU1ZTY5Nzg5NDFkOGVlIiwidGFnIjoiIn0%3D",
+    "domain": "damconuong.lol",
+    "path": "/",
+    "expires": 1777736954.606121,
+    "httpOnly": false,
+    "secure": false,
+    "sameSite": "Lax"
+  },
+  {
+    "name": "dam_co_nuong_session",
+    "value": "eyJpdiI6ImY4aUVlZVVOdktGMWtna0dMRmJ3cUE9PSIsInZhbHVlIjoibFR3a1JaSmt4ZUUxZHB5MnV3L2NBSnR5S0JyUDhHQ1pKaU9uN2JKbjI3alFCZXczcTY0VnV2ZXlZQ0kwMU9OUG0rM0NCSjM4MEZyUHNWT3BPUW1objh2KzZoM3htWnl4b3RueURPLzJZNThFYWFHNlJhcWhVMVhBdnJxYkpVdWQiLCJtYWMiOiJiZTljOTc0ZDdkNTM3ZTZkYzQ4NjdiMzU2NzU5Y2I2YjE3MjYxYmU5ZGFiZjJjOTA2ZDMwMTNjMTBmZDlmN2I5IiwidGFnIjoiIn0%3D",
+    "domain": "damconuong.lol",
+    "path": "/",
+    "expires": 1777736954.606366,
+    "httpOnly": true,
+    "secure": false,
+    "sameSite": "Lax"
+  },
+  {
+    "name": "_ga_RZ5F7JNX7S",
+    "value": "GS2.1.s1777650496$o1$g1$t1777650572$j60$l0$h0",
+    "domain": ".damconuong.lol",
+    "path": "/",
+    "expires": 1812210572.83091,
+    "httpOnly": false,
+    "secure": false,
+    "sameSite": "Lax"
+  }
+]
