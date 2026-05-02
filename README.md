@@ -122,12 +122,28 @@ If your source frequently triggers Cloudflare checks, run FlareSolverr:
 
 ```bash
 docker run -d --name flaresolverr -p 8191:8191 ghcr.io/flaresolverr/flaresolverr:latest
+docker ps
+docker start flaresolverr
+docker logs -f flaresolverr
 ```
 
 Then keep:
 
 ```env
 FLARESOLVERR_URL=http://localhost:8191/v1
+```
+Test
+```Test it
+$body = @{
+  cmd = "request.get"
+  url = "https://yourwebsite"
+  maxTimeout = 60000
+} | ConvertTo-Json -Compress
+
+Invoke-RestMethod -Uri "http://localhost:8191/v1" `
+  -Method Post `
+  -ContentType "application/json" `
+  -Body $body
 ```
 
 ## API Reference
@@ -206,13 +222,6 @@ src/
     index.ts                             # mongoose schemas/models
 ```
 
-## Scripts
-
-- `npm run dev` - start development server
-- `npm run build` - production build
-- `npm run start` - run production server
-- `npm run lint` - lint project
-
 ## Cloudflare Debug Artifacts
 
 When Cloudflare blocks a navigation, the crawler writes snapshots:
@@ -220,9 +229,9 @@ When Cloudflare blocks a navigation, the crawler writes snapshots:
 - `cloudflare-blocked.png`
 
 It also persists session helpers:
-- `.cf_cookies_damconuong.json`
-- `.cf_user_agent_damconuong.txt`
-- `.browser-profile-damconuong/`
+- `.cf_cookies_....json`
+- `.cf_user_agent_....txt`
+- `.browser-profile-.../`
 
 These files are useful for diagnosing challenge failures and improving retry strategy.
 
@@ -240,6 +249,3 @@ Use this project only where you are authorized to crawl and store content. Respe
 - copyright and content ownership
 - rate limits and server load constraints
 
-## License
-
-This repository currently has no explicit license file. Add one before public redistribution.
