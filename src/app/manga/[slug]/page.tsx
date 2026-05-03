@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { toCloudinaryAutoEcoUrl } from "@/lib/cloudinary-url";
 
 interface Chapter {
   chapterNumber: number;
@@ -86,7 +87,9 @@ export default function MangaDetailPage({
       ? a.chapterNumber - b.chapterNumber
       : b.chapterNumber - a.chapterNumber,
   );
-  const cover = manga.coverCloudinaryUrl || manga.coverUrl;
+  const cover = toCloudinaryAutoEcoUrl(
+    manga.coverCloudinaryUrl || manga.coverUrl,
+  );
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-8">

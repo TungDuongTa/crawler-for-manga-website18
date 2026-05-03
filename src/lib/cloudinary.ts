@@ -1,4 +1,5 @@
 import { v2 as cloudinary } from 'cloudinary';
+import { toCloudinaryAutoEcoUrl } from '@/lib/cloudinary-url';
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -21,11 +22,13 @@ export async function uploadImageFromUrl(
       fetch_format: 'auto',
       quality: 'auto',
     });
-    return result.secure_url;
+    return toCloudinaryAutoEcoUrl(result.secure_url);
   } catch (err: any) {
     // If already exists, build the URL from public_id
     if (err?.error?.http_code === 400 && publicId) {
-      return `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload/manga/${folder}/${publicId}`;
+      return toCloudinaryAutoEcoUrl(
+        `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload/manga/${folder}/${publicId}`,
+      );
     }
     console.error('Cloudinary upload error:', err.message);
     // Return original URL as fallback
@@ -50,7 +53,7 @@ export async function uploadImageBuffer(
         if (error) {
           reject(error);
         } else {
-          resolve(result!.secure_url);
+          resolve(toCloudinaryAutoEcoUrl(result!.secure_url));
         }
       }
     );

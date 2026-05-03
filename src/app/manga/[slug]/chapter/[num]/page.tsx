@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { toCloudinaryAutoEcoUrl } from '@/lib/cloudinary-url';
 
 interface Page {
   index: number;
@@ -168,7 +169,7 @@ export default function ChapterReaderPage({
           {pages.map((page) => (
             <div key={page.index} className="chapter-page">
               <img
-                src={page.cloudinaryUrl || page.originalUrl}
+                src={toCloudinaryAutoEcoUrl(page.cloudinaryUrl || page.originalUrl)}
                 alt={`Page ${page.index}`}
                 loading="lazy"
                 className="w-full h-auto block"
@@ -227,7 +228,7 @@ export default function ChapterReaderPage({
             }}
           >
             <img
-              src={currentPage.cloudinaryUrl || currentPage.originalUrl}
+              src={toCloudinaryAutoEcoUrl(currentPage.cloudinaryUrl || currentPage.originalUrl)}
               alt={`Page ${currentPage.index}`}
               className="w-full h-auto block rounded-lg"
               onError={(e) => {

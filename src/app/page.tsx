@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { toCloudinaryAutoEcoUrl } from '@/lib/cloudinary-url';
 
 interface MangaCard {
   slug: string;
@@ -100,7 +101,7 @@ export default function HomePage() {
               <div className="relative aspect-[2/3] bg-ink-800 rounded-lg overflow-hidden mb-2">
                 {m.coverCloudinaryUrl ? (
                   <Image
-                    src={m.coverCloudinaryUrl}
+                    src={toCloudinaryAutoEcoUrl(m.coverCloudinaryUrl)}
                     alt={m.title}
                     fill
                     className="object-cover group-hover:scale-105 transition-transform duration-300"
